@@ -1,218 +1,130 @@
-<sdf version="1.6">
-  <model name="fish_hpurv">
-    <!-- Base Link: link_base -->
-    <link name="link_base">
-      <!-- The link frame is set at the origin -->
-      <pose>0 0 0 0 0 0</pose>
-      <inertial>
-        <!-- Move the URDF inertial offset into the link's frame by zeroing the inertial pose -->
-        <pose>0 0 0 0 0 0</pose>
-        <mass>50</mass>
-        <inertia>
-          <ixx>0.01</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.01</iyy>
-          <iyz>0</iyz>
-          <izz>0.01</izz>
-        </inertia>
-      </inertial>
-      <collision name="link_base_collision">
-        <!-- Element pose zeroed; the mesh should be positioned relative to the link frame -->
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_base.stl</uri>
-          </mesh>
-        </geometry>
-      </collision>
-      <visual name="link_base_visual">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_base.stl</uri>
-          </mesh>
-        </geometry>
-      </visual>
-    </link>
-    
-    <!-- Joint: caudal_joint -->
-    <joint name="caudal_joint" type="revolute">
-      <!-- Use the URDF joint origin directly as the transformation from link_base frame to link_caudal frame -->
-      <pose>0.425323 0.0803079 -0.0204279 -1.5708 0 0</pose>
-      <parent>link_base</parent>
-      <child>link_caudal</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <lower>-0.523599</lower>
-          <upper>0.523599</upper>
-          <effort>10</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>1.5</damping>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
-    </joint>
-    
-    <!-- Child Link: link_caudal -->
-    <link name="link_caudal">
-      <!-- The link frame is now at the joint origin -->
-      <pose>0 0 0 0 0 0</pose>
-      <inertial>
-        <!-- The inertial offset from URDF is applied relative to the link frame -->
-        <pose>-0.378805 0 -0.05 1.5708 0 0</pose>
-        <mass>10</mass>
-        <inertia>
-          <ixx>0.005</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.005</iyy>
-          <iyz>0</iyz>
-          <izz>0.005</izz>
-        </inertia>
-      </inertial>
-      <collision name="link_caudal_collision">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_caudal.stl</uri>
-          </mesh>
-        </geometry>
-      </collision>
-      <visual name="link_caudal_visual">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_caudal.stl</uri>
-          </mesh>
-        </geometry>
-      </visual>
-    </link>
-    
-    <!-- Joint: joint1 (for left pectoral fin) -->
-    <joint name="joint1" type="revolute">
-      <pose>-0.0504018 0.00224307 0.118572 3.14159 0 0</pose>
-      <parent>link_base</parent>
-      <child>link_pectoral_left</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <lower>-0.785398</lower>
-          <upper>0.785398</upper>
-          <effort>10</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>1.5</damping>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
-    </joint>
-    
-    <!-- Child Link: link_pectoral_left -->
-    <link name="link_pectoral_left">
-      <!-- The link frame is at the joint origin -->
-      <pose>0 0 0 0 0 0</pose>
-      <inertial>
-        <!-- Apply the URDF offset for this fin -->
-        <pose>0.0829833 -0.0470575 0.13 3.14159 0 0</pose>
-        <mass>5</mass>
-        <inertia>
-          <ixx>0.001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.001</iyy>
-          <iyz>0</iyz>
-          <izz>0.001</izz>
-        </inertia>
-      </inertial>
-      <collision name="link_pectoral_left_collision">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_pectoral_left.stl</uri>
-          </mesh>
-        </geometry>
-      </collision>
-      <visual name="link_pectoral_left_visual">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_pectoral_left.stl</uri>
-          </mesh>
-        </geometry>
-      </visual>
-    </link>
-    
-    <!-- Joint: joint2 (for right pectoral fin) -->
-    <joint name="joint2" type="revolute">
-      <pose>-0.0504018 0.00224307 -0.160428 0 0 0</pose>
-      <parent>link_base</parent>
-      <child>link_pectoral_right</child>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <lower>-0.785398</lower>
-          <upper>0.785398</upper>
-          <effort>10</effort>
-          <velocity>10</velocity>
-        </limit>
-        <dynamics>
-          <damping>1.5</damping>
-          <spring_reference>0</spring_reference>
-          <spring_stiffness>0</spring_stiffness>
-        </dynamics>
-      </axis>
-    </joint>
-    
-    <!-- Child Link: link_pectoral_right -->
-    <link name="link_pectoral_right">
-      <!-- The link frame is at the joint origin -->
-      <pose>0 0 0 0 0 0</pose>
-      <inertial>
-        <pose>0.0829833 0.0470575 0.13 0 0 0</pose>
-        <mass>5</mass>
-        <inertia>
-          <ixx>0.001</ixx>
-          <ixy>0</ixy>
-          <ixz>0</ixz>
-          <iyy>0.001</iyy>
-          <iyz>0</iyz>
-          <izz>0.001</izz>
-        </inertia>
-      </inertial>
-      <collision name="link_pectoral_right_collision">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_pectoral_right.stl</uri>
-          </mesh>
-        </geometry>
-      </collision>
-      <visual name="link_pectoral_right_visual">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <mesh>
-            <scale>1 1 1</scale>
-            <uri>model://fish_hpurv/meshes/link_pectoral_right.stl</uri>
-          </mesh>
-        </geometry>
-      </visual>
-    </link>
-    
-    <!-- GAZEBO PLUGIN: Buoyancy -->
+<?xml version="1.0" ?>
+<robot name="fish_hpurv">
+  <!-- Link: link_base -->
+  <link name="link_base">
+    <inertial>
+      <origin xyz="0.0325815 0.0493006 -0.0204279" rpy="0 0 0"/>
+      <mass value="50"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0325815 0.0493006 -0.0204279" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_base.stl"/>
+      </geometry>
+      <material name="link_base_material">
+        <color rgba="0.796078 0.823529 0.937255 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0325815 0.0493006 -0.0204279" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_base.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Link: link_caudal -->
+  <link name="link_caudal">
+    <inertial>
+      <origin xyz="-0.378805 2.04697e-16 -0.05" rpy="1.5708 0 0"/>
+      <mass value="10"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.378805 2.04697e-16 -0.05" rpy="1.5708 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_caudal.stl"/>
+      </geometry>
+      <material name="link_caudal_material">
+        <color rgba="0.796078 0.823529 0.937255 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.378805 2.04697e-16 -0.05" rpy="1.5708 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_caudal.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint: caudal_joint (from link_base to link_caudal) -->
+  <joint name="caudal_joint" type="revolute">
+    <origin xyz="0.425323 0.0803079 -0.0204279" rpy="-1.5708 0 0"/>
+    <parent link="link_base"/>
+    <child link="link_caudal"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.523599" upper="0.523599"/>
+  </joint>
+
+  <!-- Link: link_pectoral_left -->
+  <link name="link_pectoral_left">
+    <inertial>
+      <origin xyz="0.0829833 -0.0470575 0.13" rpy="3.14159 0 0"/>
+      <mass value="5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0829833 -0.0470575 0.13" rpy="3.14159 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_pectoral_left.stl"/>
+      </geometry>
+      <material name="link_pectoral_left_material">
+        <color rgba="0.796078 0.823529 0.937255 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0829833 -0.0470575 0.13" rpy="3.14159 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_pectoral_left.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint: joint1 (from link_base to link_pectoral_left) -->
+  <joint name="joint1" type="revolute">
+    <origin xyz="-0.0504018 0.00224307 0.118572" rpy="3.14159 0 0"/>
+    <parent link="link_base"/>
+    <child link="link_pectoral_left"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.785398" upper="0.785398"/>
+  </joint>
+
+  <!-- Link: link_pectoral_right -->
+  <link name="link_pectoral_right">
+    <inertial>
+      <origin xyz="0.0829833 0.0470575 0.13" rpy="0 0 0"/>
+      <mass value="5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.0829833 0.0470575 0.13" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_pectoral_right.stl"/>
+      </geometry>
+      <material name="link_pectoral_right_material">
+        <color rgba="0.796078 0.823529 0.937255 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.0829833 0.0470575 0.13" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="$(find fish_hpurv)/meshes/link_pectoral_right.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Joint: joint2 (from link_base to link_pectoral_right) -->
+  <joint name="joint2" type="revolute">
+    <origin xyz="-0.0504018 0.00224307 -0.160428" rpy="0 0 0"/>
+    <parent link="link_base"/>
+    <child link="link_pectoral_right"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10" velocity="10" lower="-0.785398" upper="0.785398"/>
+  </joint>
+
+  <!-- Gazebo Plugin for Buoyancy -->
+  <gazebo>
     <plugin name="buoyancy_plugin" filename="libBuoyancyPlugin.so">
       <fluid_density>1000</fluid_density>
       <link name="link_base">
@@ -220,17 +132,17 @@
         <center_of_volume>0.0325815 0.0493006 -0.0204279</center_of_volume>
       </link>
       <link name="link_caudal">
-        <volume>0.01</volume>
-        <center_of_volume>-0.378805 0 -0.05</center_of_volume>
+        <volume>0.03</volume>
+        <center_of_volume>-0.378805 0  -0.05</center_of_volume>
       </link>
       <link name="link_pectoral_left">
-        <volume>0.005</volume>
+        <volume>0.01</volume>
         <center_of_volume>0.0829833 -0.0470575 0.13</center_of_volume>
       </link>
       <link name="link_pectoral_right">
-        <volume>0.005</volume>
+        <volume>0.01</volume>
         <center_of_volume>0.0829833 0.0470575 0.13</center_of_volume>
       </link>
     </plugin>
-  </model>
-</sdf>
+  </gazebo>
+</robot>
