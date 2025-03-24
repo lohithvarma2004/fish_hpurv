@@ -123,8 +123,9 @@
     <limit effort="10" velocity="10" lower="-0.785398" upper="0.785398"/>
   </joint>
 
-  <!-- Gazebo Plugin for Buoyancy -->
+  <!-- Gazebo Plugins -->
   <gazebo>
+    <!-- Buoyancy Plugin -->
     <plugin name="buoyancy_plugin" filename="libBuoyancyPlugin.so">
       <fluid_density>1000</fluid_density>
       <link name="link_base">
@@ -132,17 +133,42 @@
         <center_of_volume>0.0325815 0.0493006 -0.0204279</center_of_volume>
       </link>
       <link name="link_caudal">
-        <volume>0.03</volume>
+        <volume>0.01</volume>
         <center_of_volume>-0.378805 0  -0.05</center_of_volume>
       </link>
       <link name="link_pectoral_left">
-        <volume>0.01</volume>
+        <volume>0.005</volume>
         <center_of_volume>0.0829833 -0.0470575 0.13</center_of_volume>
       </link>
       <link name="link_pectoral_right">
-        <volume>0.01</volume>
+        <volume>0.005</volume>
         <center_of_volume>0.0829833 0.0470575 0.13</center_of_volume>
       </link>
+    </plugin>
+
+    <!-- Corrected Hydrodynamics Plugin applied to all links -->
+    <plugin name="hydrodynamics_plugin" filename="libHydrodynamicsPlugin.so">
+      <!-- Added mass terms (example values) -->
+      <xDotU>-10.0</xDotU>
+      <yDotV>-10.0</yDotV>
+      <zDotW>-10.0</zDotW>
+      <kDotP>-0.1</kDotP>
+      <mDotQ>-0.1</mDotQ>
+      <nDotR>-0.1</nDotR>
+      <!-- Linear and quadratic damping coefficients (example values) -->
+      <xUabsU>-0.32282</xUabsU>
+      <xU>-2.5</xU>
+      <yVabsV>-0.1</yVabsV>
+      <yV>-0.5</yV>
+      <zWabsW>-0.1</zWabsW>
+      <zW>-0.5</zW>
+      <kPabsP>-0.05</kPabsP>
+      <kP>-0.2</kP>
+      <mQabsQ>-0.05</mQabsQ>
+      <mQ>-0.2</mQ>
+      <nRabsR>-0.05</nRabsR>
+      <nR>-0.2</nR>
+      <default_current>0 0 0</default_current>
     </plugin>
   </gazebo>
 </robot>
