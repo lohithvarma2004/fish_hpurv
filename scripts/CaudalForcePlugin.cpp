@@ -6,7 +6,6 @@
 #include <ignition/math/Quaternion.hh>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
-#include <std_msgs/msg/float64.hpp>
 
 namespace gazebo
 {
@@ -32,10 +31,6 @@ public:
     this->mode_sub = ros_node->create_subscription<std_msgs::msg::String>(
         "/glider_mode", 10,
         std::bind(&GliderPitchBuoyancyPlugin::OnModeMsg, this, std::placeholders::_1));
-
-    this->vertical_force_sub = ros_node->create_subscription<std_msgs::msg::Float64>(
-        "/buoyancy_force_z", 10,
-        std::bind(&GliderPitchBuoyancyPlugin::OnVerticalForceMsg, this, std::placeholders::_1));
 
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(
         std::bind(&GliderPitchBuoyancyPlugin::OnUpdate, this));
@@ -68,11 +63,6 @@ public:
     }
   }
 
-  void OnVerticalForceMsg(const std_msgs::msg::Float64::SharedPtr msg)
-  {
-    this->vertical_force_z = msg->data;
-  }
-
   void OnUpdate()
   {
     rclcpp::spin_some(this->ros_node);
@@ -97,9 +87,17 @@ public:
     else if (glider_mode == "ascent")
       target_pitch = -0.5;
 
-    // Apply buoyancy force from /buoyancy_force_z topic
-    ignition::math::Vector3d buoyancy_force(-vertical_force_z, 0, 0);
-    this->link->AddForce(buoyancy_force);
+    // Apply buoyancy force only in ascent phase
+    if (glider_mode == "ascent")
+    {
+      vertical_force_z = 18.0; // Set fixed buoyancy force for ascent
+      ignition::math::Vector3d buoyancy_force(-vertical_force_z, 0, 0);
+      this->link->AddForce(buoyancy_force);
+    }
+    else
+    {
+      vertical_force_z = 0.0; // No buoyancy force in descent or idle
+    }
 
     // Pitch control
     if (!pitch_complete)
@@ -166,7 +164,6 @@ private:
 
   std::shared_ptr<rclcpp::Node> ros_node;
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr mode_sub;
-  rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr vertical_force_sub;
 
   std::string glider_mode = "idle";
   bool pitching_started = false;
