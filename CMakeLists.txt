@@ -16,75 +16,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-# Add executable for joint_publisher
-add_executable(joint_publisher scripts/joint_publisher.cpp)
-ament_target_dependencies(joint_publisher
-  rclcpp
-  trajectory_msgs
-)
-install(TARGETS joint_publisher
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-#Add executable for hpurv_dynamics_node
- add_executable(hpurv_dynamics_node scripts/hpurv_dynamics_node.cpp)
- ament_target_dependencies(hpurv_dynamics_node
-   rclcpp
-   trajectory_msgs
-   sensor_msgs
-   geometry_msgs
- )
- target_include_directories(hpurv_dynamics_node PUBLIC
-   ${EIGEN3_INCLUDE_DIRS}
- )
- target_link_libraries(hpurv_dynamics_node
-   Eigen3::Eigen
- )
- install(TARGETS hpurv_dynamics_node
-   DESTINATION lib/${PROJECT_NAME}
- )
-
-
-# Add shared library for Gazebo plugin
-add_executable(force_dynamic_plugin scripts/force_dynamic_plugin.cpp)
-target_include_directories(force_dynamic_plugin PUBLIC
-  ${EIGEN3_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-)
-target_link_libraries(force_dynamic_plugin
-  ${GAZEBO_LIBRARIES}
-  Eigen3::Eigen
-)
-ament_target_dependencies(force_dynamic_plugin
-  rclcpp
-  gazebo_ros
-  trajectory_msgs
-  sensor_msgs
-  geometry_msgs
-  std_msgs
-)
-install(TARGETS force_dynamic_plugin
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-
-#astarplugin
-add_executable(astar_planner_node scripts/astar_planner_node.cpp)
-target_include_directories(astar_planner_node PUBLIC
-  ${EIGEN3_INCLUDE_DIRS}
-)
-target_link_libraries(astar_planner_node
-  Eigen3::Eigen
-)
-ament_target_dependencies(astar_planner_node
-  rclcpp
-  geometry_msgs
-)
-install(TARGETS astar_planner_node
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-
 #caudalforceplugin
 add_library(CaudalForcePlugin SHARED scripts/CaudalForcePlugin.cpp)
 
@@ -107,7 +38,26 @@ install(TARGETS CaudalForcePlugin
   LIBRARY DESTINATION lib/${PROJECT_NAME}
 )
 
+add_library(FishBuoyancyPlugin SHARED scripts/FishBuoyancyPlugin.cpp)
 
+target_include_directories(FishBuoyancyPlugin PUBLIC
+  ${GAZEBO_INCLUDE_DIRS}
+)
+
+ament_target_dependencies(FishBuoyancyPlugin
+  rclcpp
+  std_msgs
+  gazebo_ros
+)
+
+target_link_libraries(FishBuoyancyPlugin
+  ${GAZEBO_LIBRARIES}
+  ignition-math6::ignition-math6
+)
+
+install(TARGETS FishBuoyancyPlugin
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+)
 
 
 # Install directories

@@ -75,27 +75,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # Delayed loading of controllers
-    load_joint_state_broadcaster = TimerAction(
-        period=3.0,
-        actions=[
-            ExecuteProcess(
-                cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'joint_state_broadcaster'],
-                output='screen'
-            )
-        ]
-    )
-
-    load_joint_trajectory_controller = TimerAction(
-        period=3.5,
-        actions=[
-            ExecuteProcess(
-                cmd=['ros2', 'control', 'load_controller', '--set-state', 'active', 'joint_trajectory_controller'],
-                output='screen'
-            )
-        ]
-    )
-
     # (Optional) Suppress ALSA warnings by setting environment variable
     suppress_alsa_warnings = SetEnvironmentVariable(
         name='ALSA_CONFIG_PATH',
@@ -110,7 +89,5 @@ def generate_launch_description():
     ld.add_action(gazebo_launch)
     ld.add_action(robot_state_publisher_node)
     ld.add_action(spawn_entity_node)
-    ld.add_action(load_joint_state_broadcaster)
-    ld.add_action(load_joint_trajectory_controller)
 
     return ld

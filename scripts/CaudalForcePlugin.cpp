@@ -1,180 +1,142 @@
-#include <gazebo/common/Plugin.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo/gazebo.hh>
-#include <gazebo/common/common.hh>
-#include <ignition/math/Vector3.hh>
-#include <ignition/math/Quaternion.hh>
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
+     #include <functional>
+     #include <gazebo/common/common.hh>
+     #include <gazebo/physics/physics.hh>
+     #include <sdf/sdf.hh>
+    #include <ignition/math/Pose3.hh>
+    #include <ignition/math/Vector3.hh>
+     #include <gazebo_ros/node.hpp>
+     #include <std_msgs/msg/string.hpp>
 
-namespace gazebo
-{
-class GliderPitchBuoyancyPlugin : public ModelPlugin
-{
-public:
-  void Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/) override
-  {
-    this->model = _model;
-    this->link = model->GetLink("link_base");
+     namespace gazebo
+     {
+       class CustomPitchControlPlugin : public ModelPlugin
+       {
+       public:
+         CustomPitchControlPlugin() : ModelPlugin()
+         {
+           this->targetPitch = 0.0; // Default target pitch (radians)
+           this->maxAngularVel = 0.5; // Max angular velocity (rad/s) for slow rotation
+           this->pitchGain = 10.0; // Proportional gain for torque control
+           this->dampingCoeff = 0.5; // Damping coefficient to reduce oscillation
+         }
 
-    if (!this->link)
-    {
-      gzerr << "[ERROR] Link 'link_base' not found! Plugin will not apply forces.\n";
-      return;
-    }
+         void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
+         {
+           this->model = _model;
 
-    if (!rclcpp::ok())
-      rclcpp::init(0, nullptr);
+           // Get the base link (assuming it's named "link_base" as per your URDF)
+           this->baseLink = this->model->GetLink("link_base");
+           if (!this->baseLink)
+           {
+             gzerr << "Base link 'link_base' not found in model. Plugin will not function.\n";
+             return;
+           }
 
-    this->ros_node = std::make_shared<rclcpp::Node>("glider_pitch_buoyancy_plugin");
+           // Read parameters from SDF if specified
+           if (_sdf->HasElement("max_angular_velocity"))
+           {
+             this->maxAngularVel = _sdf->Get<double>("max_angular_velocity");
+           }
+           if (_sdf->HasElement("pitch_gain"))
+           {
+             this->pitchGain = _sdf->Get<double>("pitch_gain");
+           }
+           if (_sdf->HasElement("damping_coeff"))
+           {
+             this->dampingCoeff = _sdf->Get<double>("damping_coeff");
+           }
 
-    this->mode_sub = ros_node->create_subscription<std_msgs::msg::String>(
-        "/glider_mode", 10,
-        std::bind(&GliderPitchBuoyancyPlugin::OnModeMsg, this, std::placeholders::_1));
+           // Initialize ROS 2 node
+           this->rosNode = gazebo_ros::Node::Get(_sdf);
+           // Subscribe to the pitch_command topic
+           this->sub = this->rosNode->create_subscription<std_msgs::msg::String>(
+               "pitch_command", 10,
+               std::bind(&CustomPitchControlPlugin::OnPitchCommandMsg, this, std::placeholders::_1));
 
-    this->updateConnection = event::Events::ConnectWorldUpdateBegin(
-        std::bind(&GliderPitchBuoyancyPlugin::OnUpdate, this));
+           // Connect to the update event
+           this->updateConnection = event::Events::ConnectWorldUpdateBegin(
+               std::bind(&CustomPitchControlPlugin::OnUpdate, this));
 
-    gzmsg << "[INFO] GliderPitchBuoyancyPlugin loaded. Waiting for /glider_mode command.\n";
-  }
+           gzmsg << "CustomPitchControlPlugin loaded. Commands: 'up' for +90 deg pitch, 'down' for -90 deg pitch.\n";
+         }
 
-  void OnModeMsg(const std_msgs::msg::String::SharedPtr msg)
-  {
-    std::string mode = msg->data;
+         // Callback for pitch_command topic
+         void OnPitchCommandMsg(const std_msgs::msg::String::SharedPtr msg)
+         {
+           std::string command = msg->data;
+           if (command == "up")
+           {
+             this->targetPitch = M_PI / 2.0; // +90 degrees in radians
+             gzmsg << "Received pitch command: 'up' -> target pitch = +90 degrees\n";
+           }
+           else if (command == "down")
+           {
+             this->targetPitch = -M_PI / 2.0; // -90 degrees in radians
+             gzmsg << "Received pitch command: 'down' -> target pitch = -90 degrees\n";
+           }
+           else
+           {
+             gzerr << "Invalid pitch command: '" << command << "'. Use 'up' or 'down'.\n";
+           }
+         }
 
-    if (mode == "descent" || mode == "ascent")
-    {
-      glider_mode = mode;
-      pitching_started = false;
-      pitch_complete = false;
-      glide_started = false;
-      pitch_start_time = this->model->GetWorld()->SimTime().Double();
-      gzmsg << "[INFO] Mode change: " << mode << " at time: " << pitch_start_time << "\n";
-    }
-    else if (mode == "idle")
-    {
-      glider_mode = "idle";
-      pitching_started = pitch_complete = glide_started = false;
-      gzmsg << "[INFO] Mode set to IDLE.\n";
-    }
-    else
-    {
-      gzwarn << "[WARN] Unknown mode: " << mode << "\n";
-    }
-  }
+         void OnUpdate()
+         {
+           if (!this->baseLink)
+           {
+             return;
+           }
 
-  void OnUpdate()
-  {
-    rclcpp::spin_some(this->ros_node);
+           // Get the current pose of the base link in the world frame
+           ignition::math::Pose3d pose = this->baseLink->WorldPose();
+           // Extract current pitch (rotation around Y-axis in world frame)
+           ignition::math::Vector3d rpy = pose.Rot().Euler();
+           double currentPitch = rpy.Y(); // Pitch in radians
 
-    if (glider_mode == "idle" || !this->link)
-      return;
+           // Calculate pitch error
+           double pitchError = this->targetPitch - currentPitch;
 
-    double sim_time = this->model->GetWorld()->SimTime().Double();
-    ignition::math::Quaterniond rot = this->link->WorldPose().Rot();
-    double pitch = rot.Euler().Y();
-    ignition::math::Vector3d ang_vel = this->link->WorldAngularVel();
-    ignition::math::Vector3d pos = this->link->WorldPose().Pos();
+           // If error is small (within 0.01 radians ~ 0.57 degrees), hold position and stop
+           if (std::abs(pitchError) < 0.01)
+           {
+             // Apply damping to prevent oscillation
+             ignition::math::Vector3d angularVel = this->baseLink->WorldAngularVel();
+             ignition::math::Vector3d dampingTorque = -this->dampingCoeff * angularVel;
+             this->baseLink->AddTorque(dampingTorque);
+             return;
+           }
 
-    const double pitch_gain = 1.5;
-    const double pitch_tolerance = 0.05;
-    const double glide_delay = 15.0;
+           // Calculate desired angular velocity (proportional control, capped for slow movement)
+           double desiredAngularVel = this->pitchGain * pitchError;
+           desiredAngularVel = std::max(std::min(desiredAngularVel, this->maxAngularVel), -this->maxAngularVel);
 
-    double target_pitch = 0.0;
+           // Get current angular velocity
+           ignition::math::Vector3d currentAngularVel = this->baseLink->WorldAngularVel();
 
-    if (glider_mode == "descent")
-      target_pitch = +0.5;
-    else if (glider_mode == "ascent")
-      target_pitch = -0.5;
+           // Calculate torque to achieve desired angular velocity (simple P control + damping)
+           double torque = this->pitchGain * (desiredAngularVel - currentAngularVel.Y());
+           ignition::math::Vector3d controlTorque(0, torque, 0); // Torque around Y-axis for pitch
 
-    // Apply buoyancy force only in ascent phase
-    if (glider_mode == "ascent")
-    {
-      vertical_force_z = 18.0; // Set fixed buoyancy force for ascent
-      ignition::math::Vector3d buoyancy_force(-vertical_force_z, 0, 0);
-      this->link->AddForce(buoyancy_force);
-    }
-    else
-    {
-      vertical_force_z = 0.0; // No buoyancy force in descent or idle
-    }
+           // Add damping to reduce oscillation
+           ignition::math::Vector3d dampingTorque = -this->dampingCoeff * currentAngularVel;
 
-    // Pitch control
-    if (!pitch_complete)
-    {
-      double pitch_error = target_pitch - pitch;
-      if (std::abs(pitch_error) > pitch_tolerance)
-      {
-        double torque = pitch_gain * pitch_error;
-        this->link->AddRelativeTorque(ignition::math::Vector3d(0, -torque, 0));
-        pitching_started = true;
-      }
-      else if (pitching_started)
-      {
-        this->link->SetAngularVel(ignition::math::Vector3d(0, 0, 0));
-        pitch_complete = true;
-        pitch_complete_time = sim_time;
-        gzmsg << "[INFO] [" << glider_mode << "] Pitch complete at time: " << sim_time << "\n";
-      }
-    }
+           // Combine torques and apply to the base link
+           ignition::math::Vector3d totalTorque = controlTorque + dampingTorque;
+           this->baseLink->AddTorque(totalTorque);
+         }
 
-    // Maintain pitch
-    if (pitch_complete)
-    {
-      double pitch_error = target_pitch - pitch;
-      double corrective_torque = 10.0 * pitch_error;
-      this->link->AddRelativeTorque(ignition::math::Vector3d(0, corrective_torque, 0));
-    }
+       private:
+         physics::ModelPtr model;
+         physics::LinkPtr baseLink;
+         double targetPitch; // Target pitch angle in radians
+         double maxAngularVel; // Maximum angular velocity (rad/s) for slow rotation
+         double pitchGain; // Proportional gain for torque control
+         double dampingCoeff; // Damping coefficient to reduce oscillation
+         event::ConnectionPtr updateConnection;
+         std::shared_ptr<gazebo_ros::Node> rosNode;
+         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub;
+       };
 
-    // Glide phase
-    if (pitch_complete && !glide_started && sim_time >= pitch_complete_time + glide_delay)
-    {
-      glide_started = true;
-      gzmsg << "[INFO] [" << glider_mode << "] Starting glide at time: " << sim_time << "\n";
-    }
-
-    if (glide_started)
-    {
-      ignition::math::Vector3d vel = this->link->WorldLinearVel();
-      gzdbg << "[DEBUG] [" << glider_mode << "] Time: " << sim_time
-            << " | pitch: " << pitch
-            << " | vel: " << vel
-            << " | buoyancy_force_z: " << vertical_force_z << "\n";
-    }
-
-    // Constrain lateral velocity
-    ignition::math::Vector3d world_vel = this->link->WorldLinearVel();
-    ignition::math::Vector3d local_vel = rot.RotateVectorReverse(world_vel);
-    local_vel.Y() = 0;
-    ignition::math::Vector3d constrained_vel = rot.RotateVector(local_vel);
-    this->link->SetLinearVel(constrained_vel);
-
-    // Angular damping
-    ignition::math::Vector3d damp_torque(
-        -damping_k * ang_vel.X(),
-        -damping_k * ang_vel.Y(),
-        -damping_k * ang_vel.Z());
-    this->link->AddTorque(damp_torque);
-  }
-
-private:
-  physics::ModelPtr model;
-  physics::LinkPtr link;
-  event::ConnectionPtr updateConnection;
-
-  std::shared_ptr<rclcpp::Node> ros_node;
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr mode_sub;
-
-  std::string glider_mode = "idle";
-  bool pitching_started = false;
-  bool pitch_complete = false;
-  bool glide_started = false;
-
-  double vertical_force_z = 0.0;
-  double damping_k = 5.0;
-  double pitch_start_time = 0.0;
-  double pitch_complete_time = 0.0;
-};
-
-GZ_REGISTER_MODEL_PLUGIN(GliderPitchBuoyancyPlugin)
-} // namespace gazebo
+       // Register this plugin with the simulator
+       GZ_REGISTER_MODEL_PLUGIN(CustomPitchControlPlugin)
+     }

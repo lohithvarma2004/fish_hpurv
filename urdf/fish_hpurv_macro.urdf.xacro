@@ -194,52 +194,27 @@
   </gazebo>
 
   <gazebo>
+  <plugin name="fish_buoyancy_plugin" filename="/home/uav/ros2_ws/install/fish_hpurv/lib/fish_hpurv/libFishBuoyancyPlugin.so">
+    <fluid_density>1000</fluid_density>
+    <link name="link_base">
+      <volume>0.0120</volume>
+      <center_of_volume>0.0325815 0.0493006 0.02</center_of_volume>
+    </link>
+    <link name="link_caudal">
+      <volume>0.0002</volume>
+      <center_of_volume>-0.378805 0 -0.05</center_of_volume>
+    </link>
+    <link name="link_pectoral_left">
+      <volume>0.0001</volume>
+      <center_of_volume>0.0829833 -0.0470575 0.13</center_of_volume>
+    </link>
+    <link name="link_pectoral_right">
+      <volume>0.0001</volume>
+      <center_of_volume>0.0829833 0.0470575 0.13</center_of_volume>
+    </link>
+  </plugin>
+  <plugin name="caudal_force_plugin" filename="/home/uav/ros2_ws/install/fish_hpurv/lib/fish_hpurv/libCaudalForcePlugin.so"/>
+</gazebo>
 
-    <plugin name="buoyancy_plugin" filename="libBuoyancyPlugin.so">
-      <fluid_density>1000</fluid_density>
-      <link name="link_base">
-        <volume>0.0120</volume>
-        <center_of_volume>0.0325815 0.0493006 0.02</center_of_volume>
-      </link>
-      <link name="link_caudal">
-        <volume>0.0002</volume>
-        <center_of_volume>-0.378805 0 -0.05</center_of_volume>
-      </link>
-      <link name="link_pectoral_left">
-        <volume>0.0001</volume>
-        <center_of_volume>0.0829833 -0.0470575 0.13</center_of_volume>
-      </link>
-      <link name="link_pectoral_right">
-        <volume>0.0001</volume>
-        <center_of_volume>0.0829833 0.0470575 0.13</center_of_volume>
-      </link>
-    </plugin>
-    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
-      <robotNamespace>/</robotNamespace>
-      <parameters>$(find fish_hpurv)/config/my_controllers.yaml</parameters>
-    </plugin>
-    <plugin name="caudal_force_plugin" filename="/home/lohithvarma2004/ros2_ws/install/fish_hpurv/lib/fish_hpurv/libCaudalForcePlugin.so"/>
-  </gazebo>
-
-  <ros2_control name="FishSim" type="system">
-    <hardware>
-      <plugin>gazebo_ros2_control/GazeboSystem</plugin>
-    </hardware>
-    <joint name="caudal_joint">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-    <joint name="joint1">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-    <joint name="joint2">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-  </ros2_control>
   
 </robot>
